@@ -1,0 +1,155 @@
+<!-- @format -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.1/redux.js"></script>
+  </head>
+  <body>
+    <div id="subject"></div>
+    <div id="toc"></div>
+    <div id="control"></div>
+    <div id="content"></div>
+    <script>
+      function subject() {
+        document.querySelector("#subject").innerHTML = `<header><h1>WEB</h1>Hello, CRUD!</header>`;
+      }
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      function TOC() {
+        let state = store.getState();
+        let i = 0;
+        let liTags = "";
+        //action에서 type은 필수임, type값은 마음대로 바꾸면됨.
+        //32줄 store.dispatch(action);에서 let store 쪽으로 간다.
+        while (i < state.contents.length) {
+          liTags =
+            liTags +
+            ` <li>
+                  <a onclick="event.preventDefault();
+                   let action = {type:'SELECT', id:${state.contents[i].id}}
+                   store.dispatch(action);" href="${state.contents[i].id}">
+                                      ${state.contents[i].title}</a>
+                </li>`;
+          i = i + 1;
+        }
+        document.querySelector("#toc").innerHTML = `
+              <nav>
+                  <ol>
+                    ${liTags}
+                  </ol>
+              </nav>`;
+      }
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      function Control() {
+        document.querySelector("#control").innerHTML = `
+            <ul>
+              <li><a onclick="event.preventDefault();
+                store.dispatch({type:'CHANGE_MODE', mode:'create'})" href="/create">Create</a></li>
+              <li><input onclick="
+                store.dispatch({type:'DELETE'})" type="button" value="delete" /></li>
+            </ul>`; //삭제 하는건 선택되어 있는걸 삭제하는거임. 그리고 a 태그가 아니라 prevent할 필요없음.
+      }
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      function Article() {
+        let state = store.getState();
+        if (state.mode === "create") {
+          document.querySelector("#content").innerHTML = `
+              <article>
+                <form onsubmit="event.preventDefault();
+                let _title = this.title.value; //이 코드가 title 박스안에 입력한 값임.
+                let _desc = this.desc.value;
+                store.dispatch({type:'CREATE', title:_title, desc:_desc})
+                ">
+              <p>
+                  <input type="text" name="title" placeholder="title">
+              </p>
+              <p>
+                <textarea name="desc" placeholder="description"></textarea>
+              </p>
+              <p>
+                <input type="submit">
+              </p>
+          </form>
+      </article>
+      `;
+        } else if (state.mode === "read") {
+          let i = 0;
+          let aTitle, aDesc;
+          while (i < state.contents.length) {
+            if (state.contents[i].id === state.selected_id) {
+              aTitle = state.contents[i].title;
+              aDesc = state.contents[i].desc;
+            }
+            i = i + 1;
+          }
+          document.querySelector("#content").innerHTML = `
+            <article>
+             <h2>${aTitle}</h2>
+                 ${aDesc}
+            </article>`;
+        } else if (state.mode === "welcome") {
+          document.querySelector("#content").innerHTML = `
+            <article>
+             <h2>Welcome</h2>
+                 Hello, Redux!!!
+            </article>`;
+        }
+      }
+      //이전의 스테이트 값과 호출된 이후의 action 값을 입력으로 받는다.}
+      function reducer(state, action) {
+        if (state === undefined) {
+          return {
+            //여기 content값을 초기값임. 직접 수정하지 못하게 하고 store.getState()로 확인가능
+            max_id: 2, //현재 밑에 contents 최대 id 값이 2에 같이 증가 할수 있게끔 일치시킨다.
+            mode: "create",
+            selected_id: 2, //아직 값이 설정되지 않았다고
+            contents: [
+              { id: 1, title: "HTML3", desc: "HTML is ..." },
+              { id: 2, title: "CSS3", desc: "CSS is ..." },
+            ],
+          };
+        }
+        let newState;
+        if (action.type === "SELECT") {
+          //TOC에서 onsubmit, store.dispatch로 보낸 데이터 타입이 SELECT일 경우.
+          newState = Object.assign({}, state, { selected_id: action.id, mode: "read" }); //object.assign으로 데이터 복제, 기존 state에 다시 action.id 추가
+        } else if (action.type === "CREATE") {
+          //onsubmit, store.dispatch로 보낸 데이터 타입이 Create일 경우.
+          let newMaxId = state.max_id + 1; //위에 99번째 줄에 있는걸 의미함.
+          let newContents = state.contents.concat(); //배열에서는 Object.assign말고 concat
+          newContents.push({ id: newMaxId, title: action.title, desc: action.desc }); //concat으로 복제된 newContents에다가 submit한 내용 추가.
+          newState = Object.assign({}, state, {
+            max_id: newMaxId,
+            contents: newContents,
+            mode: "read",
+          }); //글 작성 끝냈으니 마지막에 read로 바꿔준다.
+        } else if (action.type === "DELETE") {
+          let newContents = [];
+          let i = 0;
+          while (i < state.contents.length) {
+            if (state.selected_id !== state.contents[i].id) {
+              newContents.push(state.contents[i]);
+            }
+            i = i + 1;
+          }
+          newState = Object.assign({}, state, { contents: newContents, mode: "welcome" });
+        } else if (action.type === "CHANGE_MODE") {
+          newState = Object.assign({}, state, { mode: action.mode });
+        }
+        console.log(action, state, newState);
+        return newState;
+      }
+      let store = Redux.createStore(reducer); //애플리케이션 전역에서 사용 가능 let로 인해
+      store.subscribe(Article); //이걸로 인해 HTML3, CSS3등 눌르면 밑에 article에 내용 뜸.
+      //subscribe가 데이터 바뀌었는지 보고 있기 때문에 인식함
+      store.subscribe(TOC);
+      subject();
+      TOC();
+      Control();
+      Article();
+      //action을 통해서 dispatch에 action을 전달하고 reducer가 state의 값을 갱신하고 dispatch가 subscribe하고 있는 함수를 호출해서 render가 움직이고 render가 state값을 참조해서 ui를 만듬
+    </script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+<!-- @format -->
+
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.1/redux.js"></script>
+  </head>
+  <body>
+    <style>
+      .container {
+        border: 5px solid black;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      body {
+        margin: 1rem;
+      }
+    </style>
+    <h1>With redux</h1>
+    <div id="red"></div>
+    <div id="blue"></div>
+    <div id="green"></div>
+    <script>
+      //reducer가 하는일은 dispatch에 의해서 액션이 들어오면 reducer가 그 액션값과 기존에
+      //있던 state값을 참조해서 새로운 state값을 만들어준다. 은행 창구 직원. 2가지 인자 받도록 약속되어 있음.
+      //Reducer라고 하는건 이전에 state와 action을 받아서, 다음에 state 값을 리턴해주는 놈임.
+      //반드시 복제해서 하자. Object.assign({}, ~~~) 사용.
+      function reducer(state, action) {
+        console.log(state, action);
+        if (state === undefined) {
+          //초기값이 없으면. state값이 정의 되어 있지 않으면.
+          return { color: "purple" }; //초기 state값.
+        }
+        var newState;
+        if (action.type === "CHANGE_COLOR") {
+          newState = Object.assign({}, state, { color: action.color }); //object.assign은 복제임, 첫번째는 무조건 빈 객체
+        }
+        console.log(action.type, action, state, newState); //state는 이전의 state, newState는 새로운 state
+        return newState;
+      }
+      var store = Redux.createStore(
+        reducer, //store를 처음 만들때 store state 값 초기값 필요
+        window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+      );
+      //저장된걸 가져오기 위해 getState
+      //console.log(store.getState());
+      function red() {
+        var state = store.getState();
+        document.querySelector("#red").innerHTML = `
+            <div class="container" id="component_red" style="background-color:${state.color}">
+                <h1>red</h1>
+                <input type="button" value="fire" onclick="
+                    store.dispatch({type:'CHANGE_COLOR', color:'red'});
+                ">
+            </div>
+        `;
+      }
+      store.subscribe(red); //state 값이 바뀔때마다 red 값이 호출됨.
+      red();
+      //state값이 바뀔때마다 dispatch 할때마다 red 함수를 호출하게 할려면? subscribe에 render를 등록하면됨.
+      //type은 반드시 있어야함. dispatch는 store를 생성할때 제공한 reducer저 함수를 호출하도록 약속되어 있음.
+      //즉 type가 reducer(state, action) 첫번쨰 들어가고 color:"red" 가 action에 들어간다는 말임.
+      //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+      function blue() {
+        var state = store.getState();
+        document.querySelector("#blue").innerHTML = `
+            <div class="container" id="component_blue" style="background-color:${state.color}">
+                <h1>blue</h1>
+                <input type="button" value="fire" onclick="
+                    store.dispatch({type:'CHANGE_COLOR', color:'blue'});
+                ">
+            </div>
+        `;
+      }
+      store.subscribe(blue); //state 값이 바뀔때마다 red 값이 호출됨.
+      blue();
+      //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+      function green() {
+        var state = store.getState();
+        document.querySelector("#green").innerHTML = `
+            <div class="container" id="component_green" style="background-color:${state.color}">
+                <h1>green</h1>
+                <input type="button" value="fire" onclick="
+                    store.dispatch({type:'CHANGE_COLOR', color:'green'});
+                ">
+            </div>
+        `;
+      }
+      store.subscribe(green); //state 값이 바뀔때마다 red 값이 호출됨.
+      green();
+    </script>
+  </body>
+</html>
